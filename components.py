@@ -35,12 +35,11 @@ class FindComponents(MRJob):
             # if both vertices have been seen before
             if V.get(u) and V.get(v):
                 # see if both are the same component
-                try:
-                    check[V[u]].index(V[v])
+                if V[v] in check[V[u]]:
                     continue
                 
                 # if not, append this edge to list
-                except ValueError:
+                else:
                     yield (i, (u, v))
                     # V[u] != V[v] before, but
                     # now V[v] == V[u] (same comp)
@@ -84,10 +83,9 @@ class FindComponents(MRJob):
         check = {}
         for u,v in F:
             if V.get(u) and V.get(v):
-                try:
-                    check[V[u]].index(V[v])
+                if V[v] in check[V[u]]:
                     continue
-                except ValueError:
+                else:
                     total = total - 1
                     check[V[u]].append(V[v])
                     check[V[v]].append(V[u])
