@@ -41,7 +41,7 @@ class FindComponents(MRJob):
                 
                 # if not, append this edge to list
                 except ValueError:
-                    F.append((u,v))
+                    yield (i, (u, v))
                     # V[u] != V[v] before, but
                     # now V[v] == V[u] (same comp)
                     check[V[u]].append(V[v])
@@ -52,7 +52,7 @@ class FindComponents(MRJob):
                 # if we got here. add this edge
                 # then -- it introduces a new
                 # vertex to a component.
-                F.append((u,v))
+                yield (i, (u, v))
                 
                 if not V.get(u) and not V.get(v):
                     # if both were unseen, add
@@ -67,9 +67,6 @@ class FindComponents(MRJob):
                 else:
                     V[v] = V[u]
 
-        for u,v in F:
-            yield (i, (u, v))
-
     def mapper2(self, _, E):
         """
         For each edge that comes in, we return that edge
@@ -79,8 +76,7 @@ class FindComponents(MRJob):
 
     def reducer2(self, _, F):
         """
-        A simpler version of reducer1, as we no longer need
-        to retain information about edges.
+        Similar to reducer1.
         """
         V = {}
         comp = 1
