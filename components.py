@@ -27,44 +27,33 @@ class FindComponents(MRJob):
         Reducer to remove any unnecessary edges
         """
         V = {}
-        F = []
-        comp = 1
-        check = {}
 
         for u,v in E:
             # if both vertices have been seen before
             if V.get(u) and V.get(v):
                 # see if both are the same component
-                if V[v] in check[V[u]]:
+                if related(V,v,u):
                     continue
                 
                 # if not, append this edge to list
                 else:
-                    yield (i, (u, v))
-                    # V[u] != V[v] before, but
-                    # now V[v] == V[u] (same comp)
-                    check[V[u]].append(V[v])
-                    check[V[v]].append(V[u])
+                    yield(i,(u,v))
+                    join(V,v,u)
 
             elif not V.get(u) or not V.get(v):
-                # some vertex must have been unseen
-                # if we got here. add this edge
-                # then -- it introduces a new
-                # vertex to a component.
-                yield (i, (u, v))
-                
+
+                yield(i,(u,v))
+                            
                 if not V.get(u) and not V.get(v):
                     # if both were unseen, add
                     # them to the list of vertices
-                    V[u] = comp
-                    V[v] = comp
-                    check[comp] = [comp]
-                    comp = comp + 1
+                    V[u] = u
+                    V[v] = u
 
                 elif not V.get(u):
-                    V[u] = V[v]
+                    V[u] = ancestor(V,v)
                 else:
-                    V[v] = V[u]
+                    V[v] = ancestor(V,u)
 
     def mapper2(self, _, E):
         """
@@ -78,36 +67,60 @@ class FindComponents(MRJob):
         Similar to reducer1.
         """
         V = {}
-        comp = 1
         total = 0
-        check = {}
         for u,v in F:
             if V.get(u) and V.get(v):
-                if V[v] in check[V[u]]:
+                if related(V,v,u):
                     continue
                 else:
                     total = total - 1
-                    check[V[u]].append(V[v])
-                    check[V[v]].append(V[u])
+                    join(V,v,u)
+
             else:
                 if not V.get(u) and not V.get(v):
-                    # if both were unseen, add
-                    # them to the list of vertices
-                    V[u] = comp
-                    V[v] = comp
-                    check[comp] = [comp]
-                    comp = comp + 1
+                    V[u] = u
+                    V[v] = u
                     total = total + 1
                 elif not V.get(u):
-                    V[u] = V[v]
+                    V[u] = ancestor(V,v)
                 else:
-                    V[v] = V[u]
+                    V[v] = ancestor(V,u)
                 
         yield("$", total)
 
     def steps(self):
         return ([self.mr(mapper=self.mapper1,reducer=self.reducer1),
                  self.mr(mapper=self.mapper2,reducer=self.reducer2)])
+
+def related(V, v, u):
+    """
+    Lets us know if v, u are in same component or not
+    """
+    return ancestor(V,v) == ancestor(V,u)
+    
+
+def ancestor(V, u):
+    """
+    Returns the ancestor of u in V
+    """
+    u_ = u
+    while V[u_] is not u_: u_ = V[u_]
+    return u_
+
+def join(V,v,u):
+    v_ = v
+    u_ = u
+    r = ancestor(V,u)
+    while V[v_] is not v_: 
+        t = V[v_]
+        V[v_] = r
+        v_ = t
+    V[v_] = r
+    
+    while V[u_] is not u_:
+        t = V[u_]
+        V[u_] = r
+        u_ = t
 
 if __name__ == '__main__':
     FindComponents.run()
