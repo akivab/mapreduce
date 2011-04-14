@@ -28,7 +28,8 @@ class PrefixSum(MRJob):
 
     def __init__(self, *kwds, **args):
         super(PrefixSum,self).__init__(*kwds,**args)
-        self.k = 128
+        # we want k to range from 1..2^([lg(n)]+1)
+        self.k = 1
     
     def mapper(self, i, a_i):
         if type(a_i) is not type(1):
