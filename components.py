@@ -17,10 +17,10 @@ class FindComponents(MRJob):
         We use k to determine the number of subgraphs
         to break the original graph into.
         """
-        k = 10
+        k = 2000
         V = [int(i) for i in line.split()]
         r = randint(1,k)
-        yield (r, (V[0],V[1])) 
+        yield (r, (V[0],V[1]))
 
     def reducer1(self, i, E):
         """
@@ -67,6 +67,7 @@ class FindComponents(MRJob):
         Similar to reducer1.
         """
         V = {}
+
         total = 0
         for u,v in F:
             if V.get(u) and V.get(v):
@@ -97,32 +98,21 @@ def related(V, v, u):
     Lets us know if v, u are in same component or not
     """
     return ancestor(V,v) == ancestor(V,u)
-    
+
 
 def ancestor(V, u):
     """
     Returns the ancestor of u in V
     """
-    u_ = u
-    while V[u_] is not u_: u_ = V[u_]
-    return u_
+    if V[u] is not u: V[u]=ancestor(V,V[u])
+    return V[u]
 
 def join(V,v,u):
-    v_ = v
-    u_ = u
-    r = ancestor(V,u)
-    while V[v_] is not v_: 
-        t = V[v_]
-        V[v_] = r
-        v_ = t
-    V[v_] = r
-    
-    while V[u_] is not u_:
-        t = V[u_]
-        V[u_] = r
-        u_ = t
+    if u < v:
+        V[ancestor(V,v)] = ancestor(V,u)
+    else:
+        V[ancestor(V,u)] = ancestor(V,v)
+    related(V,v,u)
 
 if __name__ == '__main__':
     FindComponents.run()
-
-
