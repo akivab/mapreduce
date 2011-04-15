@@ -43,7 +43,7 @@ class PrefixSum(MRJob):
 
     def reducer(self, i, nums):
         if -1 in nums:
-            yield(i, sum(nums))
+            yield(i, sum(nums)+1)
 
 if __name__ == '__main__':
     PrefixSum().run()
